@@ -6,7 +6,7 @@ function PartScreen(props) {
   const provider = new ethers.JsonRpcProvider(
     "https://eth-sepolia.g.alchemy.com/v2/Zg0fGGNnFHhAll9YiaK2vz6YkhdeFNqB"
   );
-  console.log(provider);
+
   const productContract = new ethers.Contract(
     "0xddA97267b9b8a8aAd51E3d3e9a9DF96768389251",
     ProductManagenment.abi,
@@ -21,9 +21,25 @@ function PartScreen(props) {
   const [partDetail, setPartDetail] = useState();
   const [partHash, setPartHash] = useState();
   const [partOwned, getPartOwner] = useState([]);
-  const [address,setAddress] = useState('')
+  const [address, setAddress] = useState("");
   useEffect(() => {
-    getPartOwner(JSON.parse(localStorage.getItem("partHash")));
+    // getPartOwner(JSON.parse(localStorage.getItem("partHash")));
+    const part = JSON.parse(localStorage.getItem("partHash"));
+    async function fetctOwner() {
+      let array = [];
+      Promise.all(
+        part.map(async (ele) => {
+          let owner = await ownershipContract.currentPartOwner(ele);
+          if (owner == props.signer.address) {
+            array.push(ele);
+
+            getPartOwner([...partOwned, ...array]);
+          }
+        })
+      );
+    }
+
+    fetctOwner();
   }, []);
 
   const handlePara = async (ele) => {
@@ -32,14 +48,13 @@ function PartScreen(props) {
 
     setPartDetail(data);
   };
-  
-  const handleAddressChange = (e) => {
-    console.log(e.target.value);
-    setAddress(e.target.value)
-  }
 
-  const changeOwnership = async (address,e) => {
-e.preventDefault()
+  const handleAddressChange = (e) => {
+    setAddress(e.target.value);
+  };
+
+  const changeOwnership = async (e) => {
+    e.preventDefault();
     await ownershipContract.changeOwnership(0, partHash, address);
   };
 
@@ -53,13 +68,15 @@ e.preventDefault()
     const data = await productContract.buildPart.staticCall(
       partInfo.serialNo,
       partInfo.partType,
-      new Date()
+      new Date().toLocaleDateString().toString()
     );
     await productContract.buildPart(
       partInfo.serialNo,
       partInfo.partType,
       new Date().toLocaleDateString().toString()
     );
+
+    await ownershipContract.addOwnership(0, data);
     if (partHash) {
       partHash.push(data);
       localStorage.setItem("partHash", JSON.stringify(partHash));
@@ -118,7 +135,7 @@ e.preventDefault()
       <div class="row">
         <div id="part-list" class="collection with-header">
           <p class="collection-header">Parts Owned</p>
-          {partOwned.map((ele, i) => {
+          {partOwned?.map((ele, i) => {
             return (
               <p
                 key={i}
@@ -152,7 +169,11 @@ e.preventDefault()
             <p id="details-creation-date">
               {partDetail != undefined ? partDetail[3] : ""}
             </p>
-            <form>
+            <form
+              onSubmit={(e) => {
+                changeOwnership(e);
+              }}
+            >
               <input
                 id="part-change-ownership-input"
                 type="text"
@@ -164,9 +185,7 @@ e.preventDefault()
               <button
                 id="part-change-ownership-btn"
                 class="waves-effect waves-light btn"
-                onClick={() => {
-                  changeOwnership();
-                }}
+                type="submit"
               >
                 Change Ownership
               </button>
