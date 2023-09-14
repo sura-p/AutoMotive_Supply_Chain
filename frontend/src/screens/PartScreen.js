@@ -3,12 +3,6 @@ import * as ethers from "ethers";
 import ChangeOwnership from "../artifacts/ChangeOwnership.json";
 import ProductManagenment from "../artifacts/ProductManagement.json";
 function PartScreen(props) {
-  const [partOwned, getPartOwner] = useState([]);
-  useEffect(() => {
-    getPartOwner(JSON.parse(localStorage.getItem("partHash")));
-  }, []);
-
-  console.log(partOwned);
   const provider = new ethers.JsonRpcProvider(
     "https://eth-sepolia.g.alchemy.com/v2/Zg0fGGNnFHhAll9YiaK2vz6YkhdeFNqB"
   );
@@ -23,38 +17,56 @@ function PartScreen(props) {
     ChangeOwnership.abi,
     props.signer
   );
-
   const [partInfo, setPartInfo] = useState({ serialNo: "", partType: "" });
+  const [partDetail, setPartDetail] = useState();
+  const [partHash, setPartHash] = useState();
+  const [partOwned, getPartOwner] = useState([]);
+  const [address,setAddress] = useState('')
+  useEffect(() => {
+    getPartOwner(JSON.parse(localStorage.getItem("partHash")));
+  }, []);
+
+  const handlePara = async (ele) => {
+    setPartHash(ele);
+    const data = await productContract.parts(ele);
+
+    setPartDetail(data);
+  };
+  
+  const handleAddressChange = (e) => {
+    console.log(e.target.value);
+    setAddress(e.target.value)
+  }
+
+  const changeOwnership = async (address,e) => {
+e.preventDefault()
+    await ownershipContract.changeOwnership(0, partHash, address);
+  };
 
   const handlePartInfoChange = (e) => {
     setPartInfo({ ...partInfo, [e.target.name]: e.target.value });
   };
-  console.log(partInfo);
   const handleSubmit = async (event) => {
     event.preventDefault();
-   let data =  await productContract.parts.staticCall(
-      "0x954941535ba4f42388623cca1b0f2535e10ee2466d640a2d1078436c9ed37424"
-   );
-    console.log(data["0"]);
-    // let array = [];
-    // let partHash = JSON.parse(localStorage.getItem("partHash"));
-    // const data = await productContract.buildPart.staticCall(
-    //   partInfo.serialNo,
-    //   partInfo.partType,
-    //   new Date()
-    // );
-    // await productContract.buildPart(
-    //   partInfo.serialNo,
-    //   partInfo.partType,
-    //   new Date()
-    // );
-    // if (partHash) {
-    //   partHash.push(data);
-    //   localStorage.setItem("partHash", JSON.stringify(partHash));
-    // } else {
-    //   array.push(data);
-    //   localStorage.setItem("partHash", JSON.stringify(array));
-    // }
+    let array = [];
+    let partHash = JSON.parse(localStorage.getItem("partHash"));
+    const data = await productContract.buildPart.staticCall(
+      partInfo.serialNo,
+      partInfo.partType,
+      new Date()
+    );
+    await productContract.buildPart(
+      partInfo.serialNo,
+      partInfo.partType,
+      new Date().toLocaleDateString().toString()
+    );
+    if (partHash) {
+      partHash.push(data);
+      localStorage.setItem("partHash", JSON.stringify(partHash));
+    } else {
+      array.push(data);
+      localStorage.setItem("partHash", JSON.stringify(array));
+    }
   };
   return (
     <>
@@ -107,7 +119,17 @@ function PartScreen(props) {
         <div id="part-list" class="collection with-header">
           <p class="collection-header">Parts Owned</p>
           {partOwned.map((ele, i) => {
-            return <p class="collection-header">{ele}</p>;
+            return (
+              <p
+                key={i}
+                class="collection-header"
+                onClick={() => {
+                  handlePara(ele);
+                }}
+              >
+                {ele}
+              </p>
+            );
           })}
         </div>
       </div>
@@ -115,24 +137,40 @@ function PartScreen(props) {
         <div class="col s12">
           <div id="part-list-details">
             <label>Manufacturer Address:</label>
-            <p id="details-address"></p>
+            <p id="details-address">
+              {partDetail != undefined ? partDetail[0] : ""}
+            </p>
             <label>Serial Number:</label>
-            <p id="details-serial-num"></p>
+            <p id="details-serial-num">
+              {partDetail != undefined ? partDetail[1] : ""}
+            </p>
             <label>Part Type:</label>
-            <p id="details-part-type"></p>
+            <p id="details-part-type">
+              {partDetail != undefined ? partDetail[2] : ""}
+            </p>
             <label>Creation Date:</label>
-            <p id="details-creation-date"></p>
-            <input
-              id="part-change-ownership-input"
-              type="text"
-              placeholder="Insert address"
-            />
-            <button
-              id="part-change-ownership-btn"
-              class="waves-effect waves-light btn"
-            >
-              Change Ownership
-            </button>
+            <p id="details-creation-date">
+              {partDetail != undefined ? partDetail[3] : ""}
+            </p>
+            <form>
+              <input
+                id="part-change-ownership-input"
+                type="text"
+                placeholder="Insert address"
+                name="address"
+                value={address}
+                onChange={handleAddressChange}
+              />
+              <button
+                id="part-change-ownership-btn"
+                class="waves-effect waves-light btn"
+                onClick={() => {
+                  changeOwnership();
+                }}
+              >
+                Change Ownership
+              </button>
+            </form>
           </div>
         </div>
       </div>
