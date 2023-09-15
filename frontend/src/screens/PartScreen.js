@@ -8,12 +8,12 @@ function PartScreen(props) {
   );
 
   const productContract = new ethers.Contract(
-    "0xddA97267b9b8a8aAd51E3d3e9a9DF96768389251",
+    ProductManagenment.networks[11155111].address,
     ProductManagenment.abi,
     props.signer
   );
   const ownershipContract = new ethers.Contract(
-    "0x34E7cB6E1c4eD88A94b79b8924FE1ad7AFF7cb34",
+    ChangeOwnership.networks[11155111].address,
     ChangeOwnership.abi,
     props.signer
   );
