@@ -1,27 +1,30 @@
 import React, { useEffect, useState } from "react";
 import * as ethers from "ethers";
-import ChangeOwnership from "../artifacts/ChangeOwnership.json";
+import ChangeOwnership from "../artifacts/ProductManagement.json";
 import ProductManagenment from "../artifacts/ProductManagement.json";
+import { useDispatch, useSelector } from "react-redux";
 function PartScreen(props) {
+  const {address} = useSelector(state=>state.custom)
   const provider = new ethers.JsonRpcProvider(
     "https://eth-sepolia.g.alchemy.com/v2/Zg0fGGNnFHhAll9YiaK2vz6YkhdeFNqB"
   );
 
   const productContract = new ethers.Contract(
-    "0xddA97267b9b8a8aAd51E3d3e9a9DF96768389251",
+     ProductManagenment.networks[11155111].address,
     ProductManagenment.abi,
     props.signer
   );
   const ownershipContract = new ethers.Contract(
-    "0x34E7cB6E1c4eD88A94b79b8924FE1ad7AFF7cb34",
+    ChangeOwnership.networks[11155111].address,
     ChangeOwnership.abi,
     props.signer
   );
+  console.log("aaaaa",ownershipContract);
   const [partInfo, setPartInfo] = useState({ serialNo: "", partType: "" });
   const [partDetail, setPartDetail] = useState();
   const [partHash, setPartHash] = useState();
   const [partOwned, getPartOwner] = useState([]);
-  const [address, setAddress] = useState("");
+  const [Address, setAddress] = useState("");
   useEffect(() => {
     // getPartOwner(JSON.parse(localStorage.getItem("partHash")));
     const part = JSON.parse(localStorage.getItem("partHash"));
@@ -91,7 +94,7 @@ function PartScreen(props) {
       <div class="row">
         <div class="col s6">
           <label>Address: </label>
-          <p id="part-factory-address">{props.signer.address}</p>
+          <p id="part-factory-address">{address.address}</p>
         </div>
       </div>
       <form
@@ -179,7 +182,7 @@ function PartScreen(props) {
                 type="text"
                 placeholder="Insert address"
                 name="address"
-                value={address}
+                value={Address}
                 onChange={handleAddressChange}
               />
               <button

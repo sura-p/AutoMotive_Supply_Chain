@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity >=0.4.21 <0.8.21;
-
+pragma experimental ABIEncoderV2;
 contract ProductManagement {
     struct Part{
         address manufacturer;
@@ -14,14 +14,27 @@ contract ProductManagement {
         string serial_number;
         string product_type;
         string creation_date;
-        bytes32[6] parts;
+        bytes32[] parts;
     }
 
     mapping(bytes32 => Part) public parts;
     mapping(bytes32 => Product) public products;
-
+    struct Addresses {
+        bytes32[] addresses;
+    }
+    struct productHash {
+        bytes32[] pHash;
+    }
+    productHash private productVar;
+    Addresses private addressVar;
     constructor() public {
     }
+    function addAddress(bytes32 _address) public {
+    addressVar.addresses.push(_address);
+}
+ function addProductHash(bytes32 _address) public {
+    productVar.pHash.push(_address);
+}
 
     function concatenateInfoAndHash(address a1, string memory s1, string memory s2, string memory s3) private returns (bytes32){
         //First, get all values as bytes
@@ -60,10 +73,11 @@ contract ProductManagement {
 
         Part memory new_part = Part(msg.sender, serial_number, part_type, creation_date);
         parts[part_hash] = new_part;
+      addAddress(part_hash);
         return part_hash;
     }
 
-    function buildProduct(string memory serial_number, string memory product_type, string memory creation_date, bytes32[6] memory part_array) public returns (bytes32){
+    function buildProduct(string memory serial_number, string memory product_type, string memory creation_date, bytes32[] memory part_array) public returns (bytes32){
         //Check if all the parts exist, hash values and add to product mapping.
         uint i;
         for(i = 0;i < part_array.length; i++){
@@ -77,12 +91,20 @@ contract ProductManagement {
 
         Product memory new_product = Product(msg.sender, serial_number, product_type, creation_date, part_array);
         products[product_hash] = new_product;
+        addProductHash(product_hash);
         return product_hash;
     }
 
-    function getParts(bytes32 product_hash) public returns (bytes32[6] memory){
+    function getParts(bytes32 product_hash) public returns (bytes32[] memory){
         //The automatic getter does not return arrays, so lets create a function for that
         require(products[product_hash].manufacturer != address(0), "Product inexistent");
         return products[product_hash].parts;
+    }
+
+    function getPartList()public view returns(Addresses memory){
+         return addressVar;
+    }
+    function getPoductList()public view returns(productHash memory){
+         return productVar;
     }
 }

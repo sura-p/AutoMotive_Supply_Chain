@@ -6,6 +6,7 @@ import PartScreen from './screens/PartScreen';
 import DealerScreen from './screens/DealerScreen';
 import  * as ethers  from "ethers";
 import { useEffect, useState } from 'react';
+import { useDispatch } from 'react-redux';
 const signerMetaMask = async () => {
    const provider = new ethers.BrowserProvider(window.ethereum);
    await provider.send("eth_requestAccounts", [])
@@ -14,11 +15,12 @@ const signerMetaMask = async () => {
 }
 function App() {
    const [signer ,setSigner] = useState()
-  
+  const dispatch = useDispatch()
   
   useEffect(() => {
     signerMetaMask().then((ele) => {
-    setSigner(ele);
+      dispatch({ type: "GET_ADDRESS", payload: ele })
+      setSigner(ele);
    });
    
   }, [])
